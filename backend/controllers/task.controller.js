@@ -134,18 +134,18 @@ const updateTask = async (req, res) => {
     if (!task) return res.status(404).json({ message: "Task not found" });
 
     // if user is member of the project or not
-     const isMember = task.project.members.some(
-      (m) => m.user.toString() === req.user._id.toString()
+    const isMember = task.project.members.some(
+      (m) => m.user.toString() === req.user._id.toString(),
     );
 
-    
     if (!isMember)
       return res
         .status(403)
         .json({ message: "You are not the member of this project" });
 
-         if (assignedTo) {
-      const existingUser = task.project.members.some((m) => assignedTo.toString() === m.user.toString(),
+    if (assignedTo) {
+      const existingUser = task.project.members.some(
+        (m) => assignedTo.toString() === m.user.toString(),
       );
 
       if (!existingUser)
@@ -167,4 +167,45 @@ const updateTask = async (req, res) => {
   }
 };
 
-module.exports = { createTask, updateTaskStatus, getTaskByProject, updateTask };
+const deleteTask = async (req, res) => {
+  try {
+    console.log("delete");
+    const { taskId } = req.params;
+
+    const task = await Task.findById(taskId).populate("project");
+
+    if (!task) return res.status(404).json({ message: "Task not found" });
+
+    //find the currently loggedin user
+    const isMember = task.project.members.find(
+      (m) => m.user.toString() === req.user._id.toString(),
+    );
+
+    if (!isMember)
+      return res
+        .status(403)
+        .json({ message: "You are not the member of this project" });
+
+    const isAdmin = isMember.role === "admin";
+
+    const isAssignedUser = task.assignedTo && task.assignedTo.toString();
+    if (!isAdmin && !isAssignedUser) {
+      return res.status(403).json({
+        message: "Only admin or assigned user can delete task",
+      });
+    }
+
+    await Task.deleteOne();
+
+    res.status(200).json({ message: "Task deleted successfully" });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+};
+module.exports = {
+  createTask,
+  updateTaskStatus,
+  getTaskByProject,
+  updateTask,
+  deleteTask,
+};

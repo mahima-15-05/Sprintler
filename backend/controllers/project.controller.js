@@ -53,13 +53,11 @@ const addMembers = async (req, res) => {
       return res.status(400).json({ message: "Invalid projectId or userId" });
     }
     if (!registeredUser)
-      return res
-        .status(401)
-        .json({
-          message:
-            "Member cannot be added, unregistered" ||
-            "No used found with this id",
-        });
+      return res.status(401).json({
+        message:
+          "Member cannot be added, unregistered" ||
+          "No used found with this id",
+      });
     const project = await Project.findById(projectId);
     console.log("Project ", project);
     if (!project) return res.status(404).json({ message: "Project not found" });
@@ -98,20 +96,113 @@ const addMembers = async (req, res) => {
 
 const getMyProjects = async (req, res) => {
   try {
-
-    
     const projects = await Project.find({
       "members.user": req.user._id,
     }).sort({ createdAt: -1 });
-    
-    if(!projects)
-        return res.status(404).json({message:"No available projects"})
 
+    if (!projects)
+      return res.status(404).json({ message: "No available projects" });
 
-    res.status(200).json({message:"Projects fetched successfully", projects})
+    res
+      .status(200)
+      .json({ message: "Projects fetched successfully", projects });
   } catch (error) {
     res.status(500).json({ message: error.message || "Internal server error" });
   }
 };
 
-module.exports = { createProject, addMembers, getMyProjects };
+const deleteProject = async (req, res) => {
+  try {
+    console.log("Delete project");
+    const { projectId } = req.params;
+    const project = await Project.findById(projectId);
+
+    if (!project) {
+      return res.status(404).json({ message: "Project not found" });
+    }
+
+    const isMember = project.members.find(
+      (m) => m.user.toString() === req.user._id.toString(),
+    );
+    console.log("Role: ", isMember.role);
+
+    if (!isMember || isMember.role !== "admin")
+      return res.status(403).json({ message: "Only admin can delete project" });
+
+    await project.deleteOne();
+
+    return res.status(200).json({ message: "Project deleted successfully" });
+  } catch (error) {
+    return res
+      .status(500)
+      .json({ message: error.message || "Internal Server Error" });
+  }
+};
+
+// Rule:
+
+// Only project admin
+
+// Cannot remove yourself if you are the only admin     (important edge case)
+
+// Remove member from members array
+const removeMembers = async (req, res) => {
+try {
+    const { projectId, userId } = req.body;
+
+  const project = await Project.findById(projectId);
+  console.log("Project ",project)
+  if (!project) return res.status(403).json({ message: "Project not found" });
+
+  // check if user is admin
+  const currentUser = project.members.find((m) => 
+    req.user._id.toString() === m.user.toString()
+    
+  );
+
+  if (!currentUser || currentUser.role !== "admin")
+    return res.status(403).json({ message: "Only admin can remove members" });
+
+  // prevent yourself if you are only admin
+  const adminCount = project.members.filter((m) => m.role === "admin").length;
+
+  if (userId === req.user._id.toString() && adminCount === 1)
+    return res
+      .status(400)
+      .json({
+        message: "You are the only admin, assign another admin before leaving",
+      });
+
+
+    project.members = project.members.filter((m)=>m.user.toString() !==  userId );
+
+    await project.save();
+
+    res.status(200).json({message:"Member saved successfully"});
+} catch (error) {
+    return res.status(500).json({message: error.message || "Internal server error"});
+}
+};
+
+const getProjectById = async (req, res)=>{
+try {
+  const {projectId} = req.params;
+const project = await Project.findById(projectId).populate("members.user", "name email")
+if(!project){
+ return res.status(404).json({message:"Project not found"});
+}
+
+res.status(200).json({message:"Project fetched successfully",project});
+} catch (error) {
+  res.status(500).json({message:error.message | "Internal Server Error"});
+}
+}
+
+module.exports = {
+  createProject,
+  addMembers,
+  getMyProjects,
+  deleteProject,
+  removeMembers,
+  getProjectById
+};

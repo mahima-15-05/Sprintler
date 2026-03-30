@@ -18,6 +18,7 @@ app.use('/api/auth',authRoute);
 app.use('/api/project',projectRoute);
 app.use('/api/task',taskRoute);
 
+
 //test route
 app.get('/', (req,res)=>{
     res.json({
