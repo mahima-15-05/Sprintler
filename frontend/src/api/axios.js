@@ -2,7 +2,7 @@ import axios from 'axios';
 
 const API = axios.create({
 // baseURL:'http://localhost:4000/api'
-baseURL:'https://sprintler-backend.onrender.com/'
+baseURL:'https://sprintler-backend.onrender.com/api'
 });
 
 // add token automatically
