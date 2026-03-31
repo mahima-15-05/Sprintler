@@ -81,6 +81,7 @@ const ProjectDetail = () => {
 
   const [users, setUsers] = useState([]);
 const [selectedUser, setSelectedUser] = useState("");
+const [role, setRole] = useState("member");
 
 const fetchUsers = async () => {
   try {
@@ -93,14 +94,16 @@ const fetchUsers = async () => {
 
 const addMember = async (e) => {
   e.preventDefault();
+  
 
   try {
-    await API.put("/project/add-member", {
+    await API.post("/project/add-member", {
       projectId: id,
       userId: selectedUser,
       role: "member" // or "admin" if needed
     });
 
+    alert("Member added successfully");
     setSelectedUser("");
     fetchProject();
 

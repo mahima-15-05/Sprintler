@@ -59,7 +59,6 @@ const addMembers = async (req, res) => {
           "No used found with this id",
       });
     const project = await Project.findById(projectId);
-    console.log("Project ", project);
     if (!project) return res.status(404).json({ message: "Project not found" });
 
     const adminUser = project.members.find(
@@ -113,7 +112,6 @@ const getMyProjects = async (req, res) => {
 
 const deleteProject = async (req, res) => {
   try {
-    console.log("Delete project");
     const { projectId } = req.params;
     const project = await Project.findById(projectId);
 
@@ -124,7 +122,6 @@ const deleteProject = async (req, res) => {
     const isMember = project.members.find(
       (m) => m.user.toString() === req.user._id.toString(),
     );
-    console.log("Role: ", isMember.role);
 
     if (!isMember || isMember.role !== "admin")
       return res.status(403).json({ message: "Only admin can delete project" });
@@ -151,7 +148,6 @@ try {
     const { projectId, userId } = req.body;
 
   const project = await Project.findById(projectId);
-  console.log("Project ",project)
   if (!project) return res.status(403).json({ message: "Project not found" });
 
   // check if user is admin
